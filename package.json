@@ -7,11 +7,11 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": ""
   },
   "author": "Mykola Oleksiienko",
   "license": "MIT",
-  "devDependencies": {
+  "dependencies": {
     "ooo_oo_o": "^1.0.0"
   }
 }
