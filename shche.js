@@ -1,7 +1,7 @@
 var parserPackage = require('ooo_oo_o');
 var config = require('./config');
 
-var parser = parserPackage.get_parser(che_config);
+var parser = parserPackage.get_parser(config);
 var parsed_pool = {};
 
 var get_subscriptions = function(struct, cells_set){

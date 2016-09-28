@@ -1,5 +1,4 @@
-var trim = $.trim;
-window.che_config = {
+module.exports = {
 	syntax: {
 		root_token: {
 			children: [
@@ -358,7 +357,7 @@ window.che_config = {
 						case 'cellname':
 						case 'quoted_cellname':
 							self.event = {
-								name: trim(struct.children[0].chars),
+								name: struct.children[0].chars.trim(),
 								type: 'cell',
 							}
 						break;
@@ -372,7 +371,7 @@ window.che_config = {
 					case 'cellname':
 					case 'quoted_cellname':
 						self.event = {
-							name: trim(struct.children[0].chars),
+							name: struct.children[0].chars.trim(),
 							type: 'cell',
 						}
 					break;
