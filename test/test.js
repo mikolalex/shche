@@ -7,15 +7,11 @@ var id = a => a;
 var always = (a) => {
 	return () => a;
 }
-
+//*
 describe('Che', function () {
 	it('Testing che 1', function(){
 		var res = 0;
-		var output = {};
 		var obj = che.create('> (|(> b, c),(> e, f)):zzz, d:aaa', {
-			onOutput: function(key, val){
-				output[key] = val;
-			},
 			onSuccess: function(){
 				++res;
 			}
@@ -24,16 +20,12 @@ describe('Che', function () {
 		obj.drip("f", 2);
 		obj.drip("d", 3); 
 		assert.equal(res, 1);
-		assert.equal(output.zzz, 2);
-		assert.equal(output.aaa, 3);
+		assert.equal(obj.state.zzz, 2);
+		assert.equal(obj.state.aaa, 3);
 	})
 	it('Testing che pipes', function(){
 		var res = 0;
-		var state = {};
 		var obj = che.create('> a, b|1:ololo, c[res = ololo]', {
-			onOutput: function(key, val){
-				state[key] = val;
-			},
 			onSuccess: function(){	
 				++res;
 			}
@@ -48,12 +40,7 @@ describe('Che', function () {
 		assert.deepEqual(obj.state, {a: 1, ololo: 4, c: 3, res: 4});
 	})
 	it('Testing che quantifiers: * 1', function(){
-		var output = {};
-		var obj = che.create('> a, b*, c', {
-			onOutput: function(key, val){
-				output[key] = val;
-			},
-		}, function(state, val){
+		var obj = che.create('> a, b*, c', {}, function(state, val){
 			state.ololo = val;
 			return state;
 		}, function(state, val){
@@ -67,15 +54,9 @@ describe('Che', function () {
 		obj.drip("b", 2);
 		obj.drip("b", 2);
 		assert.deepEqual(obj.state, {"a":1,"b":[2,3,2],"c":3});
-		//assert.deepEqual(obj.state, {a: 1, ololo: 2, c: 3});
 	})
 	it('Testing che quantifiers: * 2', function(){
-		var output = {};
-		var obj = che.create('> a, b*, c', {
-			onOutput: function(key, val){
-				output[key] = val;
-			},
-		}, function(state, val){
+		var obj = che.create('> a, b*, c', {}, function(state, val){
 			state.ololo = val;
 			return state;
 		}, function(state, val){
@@ -87,29 +68,21 @@ describe('Che', function () {
 		//assert.deepEqual(obj.state, {a: 1, ololo: 2, c: 3});
 	})
 	it('Testing che quantifiers: +', function(){
-		var output = {};
-		var obj = che.create('> a, b+, c', {
-			onOutput: function(key, val){
-				output[key] = val;
-			},
-		}, function(state, val){
-			state.ololo = val;
-			return state;
-		}, function(state, val){
-			return state.ololo;
-		});
+		var obj = che.create('> a, b+, c', {}, 
+			function(state, val){
+				state.ololo = val;
+				return state;
+			}, function(state, val){
+				return state.ololo;
+			}
+		);
 		obj.drip("a", 1);
 		obj.drip("c", 3);
 		assert.deepEqual(obj.state, {a: 1});
 		//assert.deepEqual(obj.state, {a: 1, ololo: 2, c: 3});
 	})
 	it('Testing che quantifiers: {,}', function(){
-		var output = {};
-		var obj = che.create('> a, b{2,4}, c', {
-			onOutput: function(key, val){
-				output[key] = val;
-			},
-		}, function(state, val){
+		var obj = che.create('> a, b{2,4}, c', {}, function(state, val){
 			state.ololo = val;
 			return state;
 		}, function(state, val){
@@ -124,15 +97,9 @@ describe('Che', function () {
 		obj.drip("b", 3);
 		obj.drip("c", 3);
 		assert.deepEqual(obj.state, {a: 1, b: [3, 3, 3, 3], c: 3});
-		//assert.deepEqual(obj.state, {a: 1, ololo: 2, c: 3});
 	})
 	it('Testing che quantifiers: {}', function(){
-		var output = {};
-		var obj = che.create('> a, (| b{2}, c{4}), d', {
-			onOutput: function(key, val){
-				output[key] = val;
-			},
-		}, function(state, val){
+		var obj = che.create('> a, (| b{2}, c{4}), d', {}, function(state, val){
 			state.ololo = val;
 			return state;
 		}, function(state, val){
@@ -147,15 +114,9 @@ describe('Che', function () {
 		obj.drip("b", 3);
 		obj.drip("d", 3);
 		assert.deepEqual(obj.state, {"a":1,"b":[3,3],"c":[3],"d":3});
-		//assert.deepEqual(obj.state, {a: 1, ololo: 2, c: 3});
 	})
 	it('Testing conditional events', function(){
-		var output = {};
-		var obj = che.create('> a, b?1|2, c', {
-			onOutput: function(key, val){
-				output[key] = val;
-			},
-		}, function(state, val){
+		var obj = che.create('> a, b?1|2, c', {}, function(state, val){
 			return val > 10;
 		}, function(state, val){
 			state.b = val;
@@ -176,14 +137,7 @@ describe('Che', function () {
 
 describe('Testing / operator', function () {
 	it('1.', function(done){
-		var output = {};
-		var obj = che.create('> a, (/ (wait500()..., b), (wait200()..., c)), d', {
-			onOutput: function(key, val){
-				if(val !== undefined){
-					output[key] = val;
-				}
-			}
-		}, {
+		var obj = che.create('> a, (/ (wait500()..., b), (wait200()..., c)), d', {}, {
 			wait500: function(state, cb){
 				setTimeout(() => {
 					cb(true);
@@ -210,12 +164,7 @@ describe('Testing / operator', function () {
 
 describe('Testing & operator', function () {
 	it('Simple positive example', function(){
-		var output = {};
-		var obj = che.create('> a, (& b, d), c', {
-			onOutput: function(key, val){
-				output[key] = val;
-			},
-		});
+		var obj = che.create('> a, (& b, d), c');
 		obj.drip("a", 1);
 		obj.drip("d", 1);
 		obj.drip("b", 1);
@@ -224,25 +173,14 @@ describe('Testing & operator', function () {
 		assert.equal(obj.finished, true);
 	})
 	it('Simple negative example', function(){
-		var output = {};
-		var obj = che.create('> a, (& b, d), c', {
-			onOutput: function(key, val){
-				output[key] = val;
-			},
-		});
+		var obj = che.create('> a, (& b, d), c');
 		obj.drip("a", 1);
 		obj.drip("d", 1);
 		obj.drip("c", 1);
 		assert.equal(obj.finished, undefined);
 	})
 	it('Complex positive example', function(){
-		var output = {};
-		var obj = che.create('> a, (& (> b, v), d), c', {
-			onOutput: function(key, val){
-				output[key] = val;
-			},
-		});
-		
+		var obj = che.create('> a, (& (> b, v), d), c');
 		obj.drip("a", 1);
 		obj.drip("b", 1);
 		obj.drip("d", 1);
@@ -254,12 +192,7 @@ describe('Testing & operator', function () {
 
 describe('Other', function(){
 	it('Testing objects as calback', () => {
-		var output = {};
-		var obj = che.create('> a, (& b, d|multiply_10:ololo), c', {
-			onOutput: function(key, val){
-				output[key] = val;
-			},
-		}, {
+		var obj = che.create('> a, (& b, d|multiply_10:ololo), c', {}, {
 			multiply_10: function(val){
 				return val*10;
 			}
@@ -271,12 +204,7 @@ describe('Other', function(){
 		assert.deepEqual(obj.state, {a: 1, ololo: 10, b: 1, c: 1});
 	})
 	it('Testing sync functions', () => {
-		var output = {};
-		var obj = che.create('> a, (| b, c), check():done, d', {
-			onOutput: function(key, val){
-				output[key] = val;
-			},
-		}, {
+		var obj = che.create('> a, (| b, c), check():done, d', {}, {
 			check: function(state){
 				return state.a > 0;
 			},
@@ -287,22 +215,13 @@ describe('Other', function(){
 		assert.equal(obj.state.done, true);
 	})
 	it('Testing async functions', (done) => {
-		var output = {};
-		var obj = che.create('> str, (| b, c), make_request()...|merge, d', {
-			onOutput: function(key, val){
-				output[key] = val;
-			},
-		}, {
+		var obj = che.create('> str, (| b, c), make_request()...:res, d', {}, {
 			make_request: function(state, cb){
 				//console.log('making request...');
 				setTimeout(() => {
 					//console.log('running callback');
 					cb(true, 'some_test_data');
 				}, 1000)
-			},
-			merge: function(state, val){
-				state.res = val;
-				return state;
 			},
 		});
 		obj.drip("str", 'ololo');
@@ -314,12 +233,7 @@ describe('Other', function(){
 		}, 1100)
 	})
 	it('Testing async functions: parralel', (done) => {
-		var output = {};
-		var obj = che.create('> a, (| make_request1()...|merge, make_request2()...|merge, make_request3()...|merge){2}, b', {
-			onOutput: function(key, val){
-				output[key] = val;
-			},
-		}, {
+		var obj = che.create('> a, (| make_request1()..., make_request2()..., make_request3()...):res{2}, b', {}, {
 			make_request1: function(state, cb){
 				setTimeout(() => {
 					cb(true, 'some_test_data_1');
@@ -335,17 +249,13 @@ describe('Other', function(){
 					cb(true, 'some_test_data_3');
 				}, 50)
 			},
-			merge: function(state, val){
-				state.res = state.res || [];
-				state.res.push(val);
-				return state;
-			},
 		});
 		obj.drip("a", 42);
 		obj.drip("c", 1);
 		obj.drip("d", 1);
 		setTimeout(() => {
-			assert.deepEqual(obj.state, {"a":42,"res":["some_test_data_3","some_test_data_1"]});
+			assert.equal(obj.state.a, 42);
+			assert.deepEqual(obj.state.res, ["some_test_data_3","some_test_data_1"]);
 			done();
 		}, 500);
 	})
@@ -363,4 +273,4 @@ describe('Other', function(){
 					| 
 					".save|click"/"rectangles"|1/, 
 					".discard|click"
-					)/active_figure|false/`;
+					)/active_figure|false/`;//*/

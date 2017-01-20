@@ -172,6 +172,10 @@ module.exports = {
 					type: 'pipe',
 					optional: true,
 				},
+				{
+					type: 'output',
+					optional: true,
+				},
 			]
 		}, 
 		func_params: {

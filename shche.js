@@ -71,7 +71,7 @@ var defaultStateMutator = function(state, key, val){
 
 var Chex = function(struct, linking = {}, callbacks = []){
 	this.struct = struct;
-	this.onOutput = linking.onOutput;
+	this.onOutput = linking.onOutput || (() => {});
 	this.onSuccess = linking.onSuccess;
 	this.stateMutator = linking.stateMutator ? linking.stateMutator : defaultStateMutator;
 	this.callbacks = callbacks;
@@ -102,6 +102,18 @@ Chex.prototype.__runCallback = function(pipe, value){
 	}
 	return cb(value);
 
+}
+
+Chex.prototype.set = function(key, val, multiple){
+	if(multiple){
+		if(!this.state[key]){
+			this.state[key] = [];
+		}
+		this.state[key].push(val);
+	} else {
+		this.state[key] = val;
+	}
+	this.onOutput(key, val);
 }
 
 Chex.prototype.absorb = function(struct, mirror_struct, cellname, value){
@@ -189,11 +201,14 @@ Chex.prototype.absorb = function(struct, mirror_struct, cellname, value){
 	switch(struct.subtype){
 		case '|':
 			for(let i in struct.children){
-				//console.log('checking', struct.children[i]);
 				res = check(i);
 				if(is_luck(res)){
+					var vl = get_value(res);
 					if(struct.children[i].output){
-						output(struct.children[i].output, get_value(res));
+						this.set(struct.children[i].output, vl);
+					}
+					if(struct.output){
+						this.set(struct.output, vl, is_multiple(struct.quantifier));
 					}
 					return dripres(true, true, value);;
 				}
@@ -293,9 +308,6 @@ Chex.prototype.absorb = function(struct, mirror_struct, cellname, value){
 						&& struct.children[i].quantifier.max !== undefined
 						&& mirror_struct.counter < struct.children[i].quantifier.max
 				){
-					//console.log);
-					// struct.children[i].quantifier.max < mirror_struct.counter
-					//console.log('should break', struct.children[i].quantifier);
 					break;
 				}
 			}
