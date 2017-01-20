@@ -2,3 +2,5 @@
 /dist/
 /tests/
 /test/test.br.js
+/test/dst/
+/npm-debug.log
