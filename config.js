@@ -1,3 +1,9 @@
+var divide = (delim, str) => {
+	return str.split(delim).map((val) => {
+		return val.trim();
+	})
+}
+
 module.exports = {
 	syntax: {
 		root_token: {
@@ -74,6 +80,10 @@ module.exports = {
 						optional: true,
 					},
 					{
+						type: 'imperatives',
+						optional: true,
+					},
+					{
 						type: 'quantifier',
 						optional: true,
 					}
@@ -92,6 +102,10 @@ module.exports = {
 				},
 				{
 					type: 'output',
+					optional: true,
+				},
+				{
+					type: 'imperatives',
 					optional: true,
 				},
 				{
@@ -120,25 +134,8 @@ module.exports = {
 			regex: /^\s?([a-zA-Z0-9_\-])+\s?$/,
 		},
 		output: {
-			start: '/',
-			end: '/',
-			children: [
-				'>',
-				[
-					'|',
-					{
-						type: 'quoted_cellname'
-					},
-					{
-						type: 'cellname'
-					},
-				], 
-				{
-					type: 'pipe',
-					multiple: true,
-					optional: true,
-				}
-			],
+			start: ':',
+			free_chars: true,
 			regex: /^([a-zA-Z0-9_\-])+$/
 		},
 		pipe: {
@@ -191,6 +188,11 @@ module.exports = {
 			start: '{',
 			end: '}',
 		},
+		imperatives: {
+			free_chars: true,
+			start: '[',
+			end: ']',
+		},
 		quantifier: {
 			children: [
 				'|',
@@ -230,6 +232,10 @@ module.exports = {
 					}
 					if(child.type === 'pipe'){
 						revolver.pipe = parser(child).chars;
+					}
+					if(child.type === 'imperatives'){
+						var ex = divide(',', child.chars).map(divide.bind(null, '='));
+						revolver.imperatives = ex;
 					}
 					if(child.type === 'quantifier'){
 						var res = {}, quant = parser(child);
@@ -305,22 +311,7 @@ module.exports = {
 		},
 		output: {
 			func: (struct) => {
-				var self = {
-					title: false,
-					pipes: [],
-				}
-				for(let child of struct.children){
-					switch(child.type){
-						case 'cellname':
-						case 'quoted_cellname':
-							self.title = child.chars;
-						break;
-						default:
-							self.pipes.push(child.chars);
-						break;
-					}
-				}
-				return self;
+				return struct.chars;
 			}
 		},
 		func: {
@@ -416,6 +407,9 @@ module.exports = {
 					}
 					if(child.type === 'cond'){
 						self.cond = parser(child).chars;
+					}
+					if(child.type === 'imperatives'){
+						self.imperatives = divide(',', child.chars).map(divide.bind(null, '='));
 					}
 				}
 				return self;

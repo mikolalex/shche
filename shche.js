@@ -1,4 +1,4 @@
-var parserPackage = require('ooo_oo_o');
+var parserPackage = require('../ooo_oo_o/parser');
 var config = require('./config');
 
 var parser = parserPackage.get_parser(config);
@@ -100,12 +100,8 @@ Chex.prototype.__runCallback = function(pipe, value){
 		console.error('Callback should be a function!');
 		return;
 	}
-	var new_state = cb(this.state, value);
-	//console.log('Counting new state from', JSON.parse(JSON.stringify(this.state)), new_state);
-	this.state = new_state;
-	if(!this.state instanceof Object){
-		console.error('New state should be an object too!', this.state);
-	}
+	return cb(value);
+
 }
 
 Chex.prototype.absorb = function(struct, mirror_struct, cellname, value){
@@ -132,24 +128,33 @@ Chex.prototype.absorb = function(struct, mirror_struct, cellname, value){
 					var state = mirror_struct.children[i];
 						state.counter = state.counter ? state.counter + 1 : 1;
 					var pipe = struct.children[i].pipe;
+					var imp = struct.children[i].imperatives;
 					var quant = struct.children[i].quantifier;
 					if(quant && quant.max !== undefined && quant.max < state.counter){
 						// counter exceeded
 						return dripres();
 					}
 					if(pipe){
-						this.__runCallback(pipe, value);
-					} else {
-						// regular join
-						var as_array = is_multiple(quant);
-						if(as_array){
-							if(!this.state[cellname]){
-								this.state[cellname] = [];
-							}
-							this.state[cellname].push(value);
-						} else {
-							this.stateMutator(this.state, cellname, value);
+						value = this.__runCallback(pipe, value);
+					} 
+					// regular join
+					var real_key = struct.children[i].output 
+								? struct.children[i].output
+								: cellname;
+					var as_array = is_multiple(quant);
+					if(as_array){
+						if(!this.state[real_key]){
+							this.state[real_key] = [];
 						}
+						this.state[real_key].push(value);
+					} else {
+						this.stateMutator(this.state, real_key, value);
+					}
+					if(imp){
+						imp.forEach((pair) => {
+							var [to, from] = pair;
+							this.state[to] = this.state[from];
+						})
 					}
 					if(quant){
 						if(state.counter >= quant.min){
@@ -175,17 +180,7 @@ Chex.prototype.absorb = function(struct, mirror_struct, cellname, value){
 		return dripres();
 	}
 	var output = (output, val) => {
-		var title = output.title;
-		if(output.pipes.length){
-			for(let cb_num of output.pipes){
-				if(!this.callbacks[cb_num - 1]){
-					console.error('No callback provided - ', cb_num);
-					continue;
-				}
-				val = this.callbacks[cb_num - 1](this.state, val);
-			}
-		}
-		this.onOutput(title, val);
+		this.onOutput(output, val);
 	}
 	if(!struct.subtype){
 		struct = struct.event;

@@ -12,7 +12,7 @@ describe('Che', function () {
 	it('Testing che 1', function(){
 		var res = 0;
 		var output = {};
-		var obj = che.create('> (|(> b, c),(> e, f))/zzz/, d/aaa/', {
+		var obj = che.create('> (|(> b, c),(> e, f)):zzz, d:aaa', {
 			onOutput: function(key, val){
 				output[key] = val;
 			},
@@ -22,34 +22,30 @@ describe('Che', function () {
 		});
 		obj.drip("e", 1);
 		obj.drip("f", 2);
-		obj.drip("d", 3);
+		obj.drip("d", 3); 
 		assert.equal(res, 1);
 		assert.equal(output.zzz, 2);
 		assert.equal(output.aaa, 3);
 	})
 	it('Testing che pipes', function(){
 		var res = 0;
-		var output = {};
-		var obj = che.create('> a, b|1, c/res|2/', {
+		var state = {};
+		var obj = che.create('> a, b|1:ololo, c[res = ololo]', {
 			onOutput: function(key, val){
-				output[key] = val;
+				state[key] = val;
 			},
 			onSuccess: function(){	
 				++res;
 			}
-		}, function(state, val){
-			state.ololo = val;
-			return state;
-		}, function(state, val){
-			return state.ololo;
+		}, function(val){
+			return val * 2;
 		});
 		obj.drip("a", 1);
 		obj.drip("a", 2);
 		obj.drip("a", 3);
 		obj.drip("b", 2);
 		obj.drip("c", 3);
-		assert.deepEqual(output, {res: 2});
-		assert.deepEqual(obj.state, {a: 1, ololo: 2, c: 3});
+		assert.deepEqual(obj.state, {a: 1, ololo: 4, c: 3, res: 4});
 	})
 	it('Testing che quantifiers: * 1', function(){
 		var output = {};
@@ -259,14 +255,13 @@ describe('Testing & operator', function () {
 describe('Other', function(){
 	it('Testing objects as calback', () => {
 		var output = {};
-		var obj = che.create('> a, (& b, d|multiply_10), c', {
+		var obj = che.create('> a, (& b, d|multiply_10:ololo), c', {
 			onOutput: function(key, val){
 				output[key] = val;
 			},
 		}, {
-			multiply_10: function(state, val){
-				state.ololo = val*10;
-				return state;
+			multiply_10: function(val){
+				return val*10;
 			}
 		});
 		obj.drip("a", 1);
@@ -277,17 +272,13 @@ describe('Other', function(){
 	})
 	it('Testing sync functions', () => {
 		var output = {};
-		var obj = che.create('> a, (| b, c), check()|merge, d', {
+		var obj = che.create('> a, (| b, c), check():done, d', {
 			onOutput: function(key, val){
 				output[key] = val;
 			},
 		}, {
 			check: function(state){
 				return state.a > 0;
-			},
-			merge: function(state, val){
-				state.done = val;
-				return state;
 			},
 		});
 		obj.drip("a", 1);
